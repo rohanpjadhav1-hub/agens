@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>API Connection Test</h1>
+    <p>This page tests the connection to the API server.</p>
+    
+    <div style="margin-bottom: 20px;">
+        <label for="apiUrl">API URL:</label>
+        <input type="text" id="apiUrl" value="http://localhost:8000/hackrx/run" style="width: 400px; padding: 5px; margin-right: 10px;">
+        <small style="display: block; margin-top: 5px;">For local testing, use <code>http://localhost:8000/hackrx/run</code>. For deployed version, use your Render URL (e.g., <code>https://hackrx-api.onrender.com/hackrx/run</code>).</small>
+    </div>
+    
+    <button id="testButton">Test API Connection</button>
+    
+    <h2>Results:</h2>
+    <pre id="results">Click the button to test the connection...</pre>
+    
+    <script>
+        document.getElementById('testButton').addEventListener('click', async function() {
+            const resultsElement = document.getElementById('results');
+            
+            try {
+                resultsElement.textContent = 'Testing connection...';
+                
+                // Get API URL from input field
+                const apiUrl = document.getElementById('apiUrl').value.trim();
+                
+                // First, try a simple OPTIONS request to check CORS
+                const optionsResponse = await fetch(apiUrl, {
+                    method: 'OPTIONS'
+                });
+                
+                if (optionsResponse.ok) {
+                    resultsElement.textContent = 'CORS pre-flight check successful. Now testing actual API request...';
+                    
+                    // Now try the actual API request
+                    const apiResponse = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer 1e83fbe10fa7c1be5ffa312d8b283e496b82c2470dee257fb48b82ad7e8ba562'
+                        },
+                        body: JSON.stringify({
+                            document_urls: ['https://hackrx.blob.core.windows.net/assets/policy.pdf?sv=2023-01-03&st=2025-07-04T09%3A11%3A24Z&se=2027-07-05T09%3A11%3A00Z&sr=b&sp=r&sig=N4a9OU0w0QXO6AOIBiu4bpl7AXvEZogeT%2FjUHNO7HzQ%3D'],
+                            queries: ['What is the grace period for premium payment?']
+                        })
+                    });
+                    
+                    if (apiResponse.ok) {
+                        const data = await apiResponse.json();
+                        resultsElement.textContent = 'API connection successful! Response:\n\n' + JSON.stringify(data, null, 2);
+                    } else {
+                        resultsElement.innerHTML = `<span class="error">API request failed with status: ${apiResponse.status}</span>\n\nResponse text: ${await apiResponse.text()}`;
+                    }
+                } else {
+                    resultsElement.innerHTML = `<span class="error">CORS pre-flight check failed with status: ${optionsResponse.status}</span>`;
+                }
+                
+            } catch (error) {
+                resultsElement.innerHTML = `<span class="error">Error: ${error.message}</span>\n\nPossible causes:\n1. The API server is not running\n2. There's a network connectivity issue\n3. CORS is not properly configured on the server\n4. The browser is blocking the request`;
+                
+                // Add more detailed debugging information
+                resultsElement.innerHTML += '\n\nDebugging steps:\n';
+                resultsElement.innerHTML += '1. Make sure the mock server is running (python mock_server.py)\n';
+                resultsElement.innerHTML += '2. Check if the server URL is correct (http://localhost:8000)\n';
+                resultsElement.innerHTML += '3. Verify that CORS middleware is enabled in the server\n';
+                resultsElement.innerHTML += '4. Try opening the browser console (F12) for more error details';
+            }
+        });
+    </script>
+</body>
+</html>

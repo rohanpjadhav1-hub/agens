@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HackRx API Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        .container {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        pre {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        .response {
+            margin-top: 20px;
+        }
+        .error {
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <h1>HackRx API Demo</h1>
+    
+    <div class="container" style="background-color: #f8f9fa; border-left: 4px solid #3498db;">
+        <p><strong>Note:</strong> This demo can connect to either a local API server or a deployed server.</p>
+        <div class="form-group">
+            <label for="apiUrl">API URL:</label>
+            <input type="text" id="apiUrl" value="http://localhost:8000/hackrx/run">
+            <small style="display: block; margin-top: 5px;">For local testing, use <code>http://localhost:8000/hackrx/run</code>. For deployed version, use your Render URL (e.g., <code>https://hackrx-api.onrender.com/hackrx/run</code>).</small>
+        </div>
+        <p>If you encounter CORS issues with local testing, ensure the server has CORS middleware enabled.</p>
+    </div>
+    
+    <div class="container">
+        <h2>API Request</h2>
+        <div class="form-group">
+            <label for="apiKey">API Key:</label>
+            <input type="text" id="apiKey" value="1e83fbe10fa7c1be5ffa312d8b283e496b82c2470dee257fb48b82ad7e8ba562">
+        </div>
+        <div class="form-group">
+            <label for="documentUrl">Document URL:</label>
+            <input type="text" id="documentUrl" value="https://hackrx.blob.core.windows.net/assets/policy.pdf?sv=2023-01-03&st=2025-07-04T09%3A11%3A24Z&se=2027-07-05T09%3A11%3A00Z&sr=b&sp=r&sig=N4a9OU0w0QXO6AOIBiu4bpl7AXvEZogeT%2FjUHNO7HzQ%3D">
+        </div>
+        <div class="form-group">
+            <label for="queries">Queries (one per line):</label>
+            <textarea id="queries">What is the grace period for premium payment?
+What is the waiting period for pre-existing diseases?
+Does this policy cover maternity expenses, and what are the conditions?</textarea>
+        </div>
+        <button id="sendRequest">Send Request</button>
+    </div>
+    
+    <div class="container response">
+        <h2>API Response</h2>
+        <pre id="responseOutput">// Response will appear here</pre>
+    </div>
+    
+    <div class="container" id="formattedResponse" style="display: none;">
+        <h2>Formatted Answers</h2>
+        <div id="questionsAndAnswers"></div>
+    </div>
+
+    <script>
+        document.getElementById('sendRequest').addEventListener('click', async function() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const documentUrl = document.getElementById('documentUrl').value.trim();
+            const queriesText = document.getElementById('queries').value.trim();
+            const responseOutput = document.getElementById('responseOutput');
+            
+            // Validate inputs
+            if (!apiKey || !documentUrl || !queriesText) {
+                responseOutput.innerHTML = '<span class="error">Error: All fields are required</span>';
+                return;
+            }
+            
+            // Parse queries (split by new line)
+            const queries = queriesText.split('\n').filter(q => q.trim() !== '');
+            
+            // Prepare request data
+            const requestData = {
+                document_urls: [documentUrl],
+                queries: queries
+            };
+            
+            try {
+                responseOutput.textContent = 'Sending request...';
+                
+                // Get API URL from input field
+                const apiUrl = document.getElementById('apiUrl').value.trim();
+                
+                // Send API request
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                // Check if response is ok before parsing
+                if (!response.ok) {
+                    throw new Error(`API returned status code ${response.status}: ${await response.text()}`);
+                }
+                
+                // Parse response
+                const data = await response.json();
+                
+                // Display formatted response
+                responseOutput.textContent = JSON.stringify(data, null, 2);
+                
+                // Display formatted questions and answers
+                const formattedResponse = document.getElementById('formattedResponse');
+                const questionsAndAnswers = document.getElementById('questionsAndAnswers');
+                
+                // Clear previous content
+                questionsAndAnswers.innerHTML = '';
+                
+                // Create formatted Q&A display
+                if (data.answers && data.answers.length > 0) {
+                    formattedResponse.style.display = 'block';
+                    
+                    queries.forEach((question, index) => {
+                        if (index < data.answers.length) {
+                            const qDiv = document.createElement('div');
+                            qDiv.style.marginBottom = '20px';
+                            
+                            const qHeading = document.createElement('h3');
+                            qHeading.textContent = `Question ${index + 1}:`;
+                            qHeading.style.marginBottom = '5px';
+                            qHeading.style.color = '#3498db';
+                            
+                            const qText = document.createElement('p');
+                            qText.textContent = question;
+                            qText.style.fontWeight = 'bold';
+                            
+                            const aHeading = document.createElement('h3');
+                            aHeading.textContent = `Answer ${index + 1}:`;
+                            aHeading.style.marginBottom = '5px';
+                            aHeading.style.color = '#27ae60';
+                            
+                            const aText = document.createElement('p');
+                            aText.textContent = data.answers[index];
+                            
+                            qDiv.appendChild(qHeading);
+                            qDiv.appendChild(qText);
+                            qDiv.appendChild(aHeading);
+                            qDiv.appendChild(aText);
+                            
+                            questionsAndAnswers.appendChild(qDiv);
+                        }
+                    });
+                }
+                
+            } catch (error) {
+                console.error('API request error:', error);
+                responseOutput.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+                
+                // Add debugging information
+                responseOutput.innerHTML += `<br><br><strong>Debugging steps:</strong><br>
+                1. Make sure the mock server is running (python mock_server.py)<br>
+                2. Check if the server URL is correct (http://localhost:8000)<br>
+                3. Verify that CORS middleware is enabled in the server<br>
+                4. Try opening the browser console (F12) for more error details<br>
+                5. Check if your API key is correct<br>
+                6. Ensure the document URL is accessible`;
+                
+                document.getElementById('formattedResponse').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

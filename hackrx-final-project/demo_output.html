@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HackRx API Test - Demo Output</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .response {
+            margin-top: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .query {
+            font-weight: bold;
+            margin-top: 15px;
+            color: #0066cc;
+        }
+        .answer {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>HackRx API Test - Demo Output</h1>
+    
+    <div>
+        <h2>Request</h2>
+        <pre>{
+  "document_urls": [
+    "https://hackrx.blob.core.windows.net/assets/policy.pdf?sv=2023-01-03&st=2025-07-04T09%3A11%3A24Z&se=2027-07-05T09%3A11%3A00Z&sr=b&sp=r&sig=N4a9OU0w0QXO6AOIBiu4bpl7AXvEZogeT%2FjUHNO7HzQ%3D"
+  ],
+  "queries": [
+    "What is the grace period for premium payment under the National Parivar Mediclaim Plus Policy?",
+    "What is the waiting period for pre-existing diseases (PED) to be covered?"
+  ]
+}</pre>
+    </div>
+    
+    <div class="response">
+        <h2>Response</h2>
+        <pre>{
+  "answers": [
+    "The grace period for premium payment under the National Parivar Mediclaim Plus Policy is 30 days from the due date.",
+    "The waiting period for pre-existing diseases (PED) to be covered is 48 months (4 years) from the date of inception of the policy."
+  ]
+}</pre>
+    </div>
+
+    <div class="response">
+        <h2>Formatted Output</h2>
+        <div class="query">Query 1: What is the grace period for premium payment under the National Parivar Mediclaim Plus Policy?</div>
+        <div class="answer">The grace period for premium payment under the National Parivar Mediclaim Plus Policy is 30 days from the due date.</div>
+        
+        <div class="query">Query 2: What is the waiting period for pre-existing diseases (PED) to be covered?</div>
+        <div class="answer">The waiting period for pre-existing diseases (PED) to be covered is 48 months (4 years) from the date of inception of the policy.</div>
+    </div>
+
+    <p><em>Note: This is a demonstration of what the output would look like when the API is working properly. The actual responses may vary based on the document content and the specific queries.</em></p>
+</body>
+</html>
